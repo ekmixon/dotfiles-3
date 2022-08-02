@@ -22,8 +22,7 @@ def listwin():
     for node in tree["nodes"]:
         get_children(node)
 
-    ids = list(windows.keys())
-    ids.sort()
+    ids = sorted(windows.keys())
     for id in ids:
         for win in windows[id]:
             print(id, "-", win["class"], "-", win["name"])
@@ -31,9 +30,7 @@ def listwin():
 
 def get_children(node, workspace=None):
     if "class" in node:
-        window_list = []
-        if workspace in windows:
-            window_list = windows[workspace]
+        window_list = windows[workspace] if workspace in windows else []
         window = {
             "workspace": workspace,
             "name": node["name"],

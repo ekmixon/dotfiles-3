@@ -162,21 +162,20 @@ def move_display():
     subprocess.run(["i3-msg", "mode", "default"])
 
 
-def yad_args(title: str, message: str, *extra_args)->list:
+def yad_args(title: str, message: str, *extra_args) -> list:
     args = [
         "yad",
-        "--text={}".format(message),
+        f"--text={message}",
         "--skip-taskbar",
         "--splash",
         "--on-top",
-        "--title={}".format(title),
+        f"--title={title}",
         "--buttons-layout=center",
         "--center",
         "--sticky",
     ]
-    for arg in extra_args:
-        args.append(arg)
 
+    args.extend(iter(extra_args))
     return args
 
 
@@ -194,32 +193,34 @@ def get_workspace() -> str:
 def close_i3_window():
     cmd = subprocess.run(["i3-msg", "kill"])
     if cmd.returncode is not 0:
-        print("cannot close window, exit code {}".format(
-            cmd.returncode), file=sys.stderr)
+        print(f"cannot close window, exit code {cmd.returncode}", file=sys.stderr)
 
 
 def close_dialog(window_id: str = None) -> int:
     if window_id is None:
         window_id = get_active_window_id()
-        if window_id is None:
-            return -1
+    if window_id is None:
+        return -1
     # focus window
     subprocess.run(["wmctrl", "-i", "-a", window_id])
 
     window = get_window_pos(window_id)
-    close_dialog = subprocess.run([
-        "yad",
-        "--text=Close this window?",
-        "--skip-taskbar",
-        "--splash",
-        "--on-top",
-        "--close-on-unfocus",
-        "--title={}".format(window.title),
-        "--text-align=center",
-        "--buttons-layout=center",
-        "--posx={}".format(window.x + window.width / 2),
-        "--posy={}".format(window.y + window.height / 2),
-    ])
+    close_dialog = subprocess.run(
+        [
+            "yad",
+            "--text=Close this window?",
+            "--skip-taskbar",
+            "--splash",
+            "--on-top",
+            "--close-on-unfocus",
+            f"--title={window.title}",
+            "--text-align=center",
+            "--buttons-layout=center",
+            f"--posx={window.x + window.width / 2}",
+            f"--posy={window.y + window.height / 2}",
+        ]
+    )
+
     return close_dialog.returncode
 
 
@@ -262,9 +263,7 @@ def get_active_window_id() -> str:
     cmd = subprocess.Popen(
         ["xdotool", "getactivewindow"], stdout=subprocess.PIPE)
     code = cmd.wait()
-    if code is not 0:
-        return None
-    return cmd.stdout.read().decode().strip()
+    return None if code is not 0 else cmd.stdout.read().decode().strip()
 
 
 def get_window_count(workspace: str = None) -> int:
@@ -282,8 +281,7 @@ def show_window_switcher(current_workspace: bool = True):
     count = 0
     if current_workspace:
         count = get_window_count()
-        if count > 10:
-            count = 10
+        count = min(count, 10)
         if count is 0:
             return
     args = [
@@ -297,9 +295,7 @@ def show_window_switcher(current_workspace: bool = True):
         "-show"
     ]
     if current_workspace:
-        args.append("windowcd")
-        args.append("-lines")
-        args.append("{}".format(count))
+        args.extend(("windowcd", "-lines", f"{count}"))
     else:
         args.append("window")
 
